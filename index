@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Paros Andon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    select, button, input {
+      padding: 6px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      background: #f97316;
+      color: white;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #1e293b;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    th {
+      background: #020617;
+    }
+
+    .input {
+      width: 60px;
+      text-align: center;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📊 Paros Andon</h1>
+
+<div class="top">
+  <div>
+    Semana:
+    <select id="weekSelect"></select>
+  </div>
+
+  <button onclick="saveWeek()">💾 Guardar</button>
+</div>
+
+<table id="tabla"></table>
+
+<h2>🏆 Ranking por Tacto</h2>
+<table id="ranking"></table>
+
+<script>
+/* ============================
+   CONFIG
+============================ */
+
+const WEEKS = 53;
+const DAYS = ['L', 'M', 'X', 'J', 'V'];
+const TACTOS = [1,2,3,4,5,6];
+
+/* ============================
+   DATA
+============================ */
+
+let data = JSON.parse(localStorage.getItem('andon_data')) || {};
+let currentWeek = 1;
+
+/* ============================
+   INIT
+============================ */
+
+function init() {
+  const sel = document.getElementById('weekSelect');
+
+  for (let i = 1; i <= WEEKS; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = "Semana " + i;
+    sel.appendChild(opt);
+  }
+
+  sel.addEventListener('change', e => {
+    currentWeek = +e.target.value;
+    render();
+  });
+
+  render();
+}
+
+init();
+
+/* ============================
+   RENDER TABLA
+============================ */
+
+function render() {
+  const tabla = document.getElementById('tabla');
+
+  let html = `
+    <tr>
+      <th>Tacto</th>
+      ${DAYS.map(d => `<th>${d}</th>`).join('')}
+    </tr>
+  `;
+
+  TACTOS.forEach(t => {
+    html += `<tr><td>${t}</td>`;
+
+    DAYS.forEach((_, d) => {
+      const val = data[currentWeek]?.[t]?.[d] || '';
+      html += `
+        <td>
+          <input class="input"
+            value="${val}"
+            onchange="update(${t}, ${d}, this.value)">
+        </td>`;
+    });
+
+    html += `</tr>`;
+  });
+
+  tabla.innerHTML = html;
+
+  renderRanking();
+}
+
+/* ============================
+   UPDATE DATA
+============================ */
+
+function update(tacto, dia, value) {
+  if (!data[currentWeek]) data[currentWeek] = {};
+  if (!data[currentWeek][tacto]) data[currentWeek][tacto] = [];
+
+  data[currentWeek][tacto][dia] = value;
+}
+
+/* ============================
+   GUARDAR
+============================ */
+
+function saveWeek() {
+  localStorage.setItem('andon_data', JSON.stringify(data));
+  alert("Semana guardada");
+}
+
+/* ============================
+   CONVERSION mm.ss → segundos
+============================ */
+
+function toSeconds(val) {
+  if (!val) return 0;
+
+  const parts = val.split('.');
+  const min = parseInt(parts[0]) || 0;
+  const sec = parseInt(parts[1]) || 0;
+
+  return min * 60 + sec;
+}
+
+/* ============================
+   CONVERSION segundos → mm.ss
+============================ */
+
+function toMS(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}.${String(s).padStart(2,'0')}`;
+}
+
+/* ============================
+   RANKING
+============================ */
+
+function renderRanking() {
+  const ranking = document.getElementById('ranking');
+
+  let arr = [];
+
+  TACTOS.forEach(t => {
+    let total = 0;
+
+    DAYS.forEach((_, d) => {
+      const val = data[currentWeek]?.[t]?.[d];
+      total += toSeconds(val);
+    });
+
+    arr.push({ tacto: t, total });
+  });
+
+  arr.sort((a,b) => b.total - a.total);
+
+  let html = `
+    <tr>
+      <th>#</th>
+      <th>Tacto</th>
+      <th>Paro total</th>
+    </tr>
+  `;
+
+  arr.forEach((r, i) => {
+    html += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.tacto}</td>
+        <td>${toMS(r.total)}</td>
+      </tr>
+    `;
+  });
+
+  ranking.innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>
