@@ -1,0 +1,22 @@
+{
+  "name": "PAROS ANDON · ML2 · RAMAL 2",
+  "short_name": "PAROS ANDON",
+  "description": "Dashboard de paros atornilladores ML2 Ramal 2",
+  "start_url": "/PAROS-ANDON/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#FF5A00",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "icon192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
